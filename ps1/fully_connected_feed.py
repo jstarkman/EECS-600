@@ -1,3 +1,4 @@
+#! /usr/bin/python
 # Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,15 +29,52 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 from tensorflow.examples.tutorials.mnist import mnist
 
+import argparse # for python2; for 3, use optparse
+
+parser = argparse.ArgumentParser(description="EECS 600 PS 1")
+parser.add_argument(
+	dest="max_steps",
+	metavar="N",
+	type=int,
+	default=2000,
+	nargs="?",
+	help="Maximum # of steps"
+)
+parser.add_argument(
+	dest="batch_size",
+	metavar="n",
+	type=int,
+	default=100,
+	nargs="?",
+	help="Must divide evenly into the dataset sizes."
+)
+parser.add_argument(
+	dest="h1",
+	metavar="h1",
+	type=int,
+	default=128,
+	nargs="?",
+	help="# neurons in H1"
+)
+parser.add_argument(
+	dest="h2",
+	metavar="h2",
+	type=int,
+	default=32,
+	nargs="?",
+	help="# neurons in H2"
+)
+
+cmd_flags = parser.parse_args()
 
 # Basic model parameters as external flags.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
-flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
-flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
-flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
-flags.DEFINE_integer('batch_size', 100, 'Batch size.  '
+flags.DEFINE_integer('max_steps', cmd_flags.max_steps, 'Number of steps to run trainer.')
+flags.DEFINE_integer('hidden1', cmd_flags.h1, 'Number of units in hidden layer 1.')
+flags.DEFINE_integer('hidden2', cmd_flags.h2, 'Number of units in hidden layer 2.')
+flags.DEFINE_integer('batch_size', cmd_flags.batch_size, 'Batch size.  '
                      'Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
 flags.DEFINE_boolean('fake_data', False, 'If true, uses fake data '
