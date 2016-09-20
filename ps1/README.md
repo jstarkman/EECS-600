@@ -1,7 +1,87 @@
 # Report
 
+In order to more efficiently analyze the results of exploring the
+search space, Google's program was tweaked to return the accuracy for
+the testing set after running.  It was then run inside a series of
+nested Bash `for ... in` loops, with the parameters passed in via
+command-line arguments using Tensorflow's built-in
+`tf.app.flags.DEFINE_foo` feature, where `foo` is a type (*e.g.*,
+`float`, `integer`, or `string`).
+
+Parameters will be listed in (max step, batch size, length of hidden
+vector 1, length of hidden vector 2) order.
 
 
+## Naive sampling of entire search space
+
+All 48 combinations of the following were tried:
+
+
+| MS   | BS   | H1  | H2 |
+|------|------|-----|----|
+| 2000 | 100  | 32  | 8  |
+| 4000 | 1000 | 64  | 16 |
+|      |      | 128 | 32 |
+|      |      |     | 64 |
+
+
+In general, the larger values performed better than the smaller ones,
+although for H1 the effect was absent.  The difference between the
+different parameter combinations was not especially pronounced: the
+best run had 92.34% correct, while the worst was 86.95%, in spite of
+the not insignificant differences in training time.
+
+
+The highest accuracy value came from (4000, 1000, 128, 64), ever so
+slightly edging out (by a difference of 0.0004, or two images) the run
+with a tenth the batch size, which took about a third of the time to
+run.  Thus, when choosing a batch size, since matching an extra few
+images is generally not worth the extra fortyish seconds the model
+would take to train (as compared to 18 for the smaller batch size
+(BS=1000 takes about a minute)).
+
+
+One trend made clear by sorting the runs by their accuracy numbers is
+that the larger maximum step was almost universally superior to the
+smaller, to the point that the top 21 scores were all MS=4k.  Number
+22 was (2000, 1000, 128, 64), representing the best (and most
+computationally-expensive) of the MS=2k runs.
+
+
+## Targeted search of different MS values
+
+All 24 combinations of the following were tried:
+
+
+| MS     | BS  | H1  | H2 |
+|--------|-----|-----|----|
+| 2000   | 100 | 64  | 16 |
+| 4000   |     | 128 | 32 |
+| 8000   |     |     | 64 |
+| 16000  |     |     |    |
+
+
+The results were clear: the larger MS values always performed better
+than their smaller equivalents, with the best score being 95.92%
+correct.  Interestingly, for a given MS value, larger H1 values tended
+to perform better than smaller.  Previously, these two values had not
+shown any particular correlation.  For a given MS and H1 pair, for
+smaller MS values larger H2 values were better, while for large MS
+values smaller H2 values were better.
+
+Here is a graphical representation of the lengths of each vector/layer
+for the most accurate network of the 24.  Each `x` represents ten
+elements, rounded.  Since this is the MNIST dataset, the input layer
+has 784 elements, and the output 10.
+
+```
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxx
+xx
+x
+```
+
+## 
 
 
 # Prompt
