@@ -67,7 +67,10 @@ correct.  Interestingly, for a given MS value, larger H1 values tended
 to perform better than smaller.  Previously, these two values had not
 shown any particular correlation.  For a given MS and H1 pair, for
 smaller MS values larger H2 values were better, while for large MS
-values smaller H2 values were better.
+values smaller H2 values were better.  Since the MS value is how long
+the network is allowed to train, and since the longer a network has
+had to train the longer 
+
 
 Here is a graphical representation of the lengths of each vector/layer
 for the most accurate network of the 24.  Each `x` represents ten
@@ -81,7 +84,41 @@ xx
 x
 ```
 
-## 
+This may have something to do with it.  If nothing else, the graphic
+gives a sense of scale to an often-abstracted problem.
+
+
+## Impact of layer sizing
+
+Finally, to better understand the impact of layer sizing on
+reasonably-good MS values, a final set of values was tested:
+
+
+| MS   | BS  | H1  | H2 |
+|------|-----|-----|----|
+| 4000 | 100 | 16  | 8  |
+| 8000 |     | 32  | 16 |
+|      |     | 64  | 32 |
+|      |     | 128 | 64 |
+|      |     | 256 |    |
+
+
+All 40 combinations were tried.  The best combination was (8000, 100,
+256, 16) with a score of 94.5%, followed by H2 = (32, 64, 8), in that
+order.  The worst score used H1=16, H2=8.  Clearly, in this case, more
+total neurons correlates with higher scores, although H1 was weighted
+more heavily than H2.
+
+
+# Summary
+
+The maximum step size mattered most.
+
+Batch size was barely relevant.
+
+H1 and H2 had no significant, consistent correlations, although in
+general larger values for H1 and smaller values for H2 worked better
+in some cases.
 
 
 # Prompt

@@ -5,13 +5,13 @@ start=$(date +%s.%N)
 out_dir=$(date)
 mkdir "$out_dir"
 
-for ms in 2000 4000 8000 16000
+for ms in 4000 8000
 do
 	for bs in 100 # 1000 # 5000
 	do
-		for h1 in 64 128
+		for h1 in 16 32 64 128 256
 		do
-			for h2 in 16 32 64
+			for h2 in 8 16 32 64
 			do
 				echo "$(date): Doing $ms $bs $h1 $h2"
 				python fully_connected_feed.py --max_steps $ms --batch_size $bs --hidden1 $h1 --hidden2 $h2 \
