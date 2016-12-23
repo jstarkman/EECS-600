@@ -1,6 +1,6 @@
-#! /usr/local/src/RPMS/anaconda2/bin/python2
+#! /usr/bin/python2
 import numpy as np
-import caffe
+import tensorflow as tf
 
 import zxc251_reader
 

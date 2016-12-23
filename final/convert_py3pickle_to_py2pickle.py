@@ -1,5 +1,6 @@
-#! /usr/local/python/3.5.2/bin/python3
+#! /usr/bin/python3
 from six.moves import cPickle as pickle
+import numpy as np
 
 file_name = 'depth_data.pickle4'
 new_fn = 'depth_data.pickle2'
