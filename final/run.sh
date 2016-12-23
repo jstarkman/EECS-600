@@ -1,2 +1,2 @@
-python -m pdb zxc251_reader.py
+python2 -m pdb final.py
 
