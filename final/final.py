@@ -1,8 +1,17 @@
 #! /usr/bin/python2
 import numpy as np
 import tensorflow as tf
+import png
 
 import zxc251_reader
+
+def depth2pixels(img):
+	"Rescales into new array such that all values are between zero and one."
+	a = np.amin(img)
+	b = np.amax(img)
+	s = 255.0 / (b - a)
+	tmp = ((img - a) * s)
+	return tmp.astype(int)
 
 train_dataset, train_labels,\
 	valid_dataset, valid_labels,\
@@ -12,4 +21,12 @@ train_dataset, train_labels,\
 print('Training:', train_dataset.shape, train_labels.shape)
 print('Validation:', valid_dataset.shape, valid_labels.shape)
 print('Testing:', test_dataset.shape, test_labels.shape)
+
+first = train_dataset[0, :, :]
+px = depth2pixels(first)
+print px
+
+# import pdb; pdb.set_trace() # set breakpoint
+
+png.from_array(px, 'L;8').save("first.png")
 

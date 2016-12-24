@@ -1,5 +1,7 @@
 # Ignore our data files
 *.pickle*
+data/*
+png.py
 
 ########## Everything below this point came from Github's
 ########## Python.gitignore file
