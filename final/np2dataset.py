@@ -28,12 +28,12 @@ class DS:
 		self.which_axis = d.shape.index(max(d.shape))
 		# makes reshaping data into vectors relatively painless
 		assert(self.which_axis == 0)
-		self.num_examples = d.shape[self.which_axis]
+		self.qty = d.shape[self.which_axis]
 		# v = 1;
 		# for i, s in enumerate(d.shape):
 		# 	if i != self.which_axis:
 		# 		v *= s
-		self.data = d # d.reshape((self.num_examples, v))
+		self.data = d # d.reshape((self.qty, v))
 		self.labels = l
 		self.idx = 0
 		self.epochs_completed = 0
@@ -41,9 +41,9 @@ class DS:
 	def next_batch(self, batch_size):
 		start = self.idx
 		self.idx += batch_size
-		if self.idx > self.num_examples:
+		if self.idx > self.qty:
 			self.epochs_completed += 1
-			self.shuffle()
+			self.__shuffle()
 			start = 0
 			self.idx = batch_size
 		end = self.idx
@@ -53,8 +53,8 @@ class DS:
 		return self.data[tuple(sl)], self.labels[final]
 		# return self.data[start:end], self.labels[start:end]
 
-	def shuffle(self):
-		p = np.arange(self.num_examples)
+	def __shuffle(self):
+		p = np.arange(self.qty)
 		np.random.shuffle(p)
 		self.data = self.data[p] # copy b/c Numpy advanced indexing
 		self.labels = self.labels[p] # same

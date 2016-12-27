@@ -9,6 +9,7 @@ from __future__ import print_function
 import os.path
 import time
 
+import six
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 import numpy as np
@@ -36,92 +37,64 @@ flags.DEFINE_integer('fc2',     96, 'Number of units in fully-connected layer 2.
 flags.DEFINE_integer('batch_size', 243, 'Batch size.  Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
 
-def fill_feed_dict(data_set, images_pl, labels_pl):
-	"""Fills the feed_dict for training the given step.
-
-  A feed_dict takes the form of:
-  feed_dict = {
-      <placeholder>: <tensor of values to be passed for placeholder>,
-      ....
-  }
-
-  Args:
-    data_set: The set of images and labels, from input_data.read_data_sets()
-    images_pl: The images placeholder, from placeholder_inputs().
-    labels_pl: The labels placeholder, from placeholder_inputs().
-
-  Returns:
-    feed_dict: The feed dictionary mapping from placeholders to values.
-	"""
-	images_feed, labels_feed = data_set.next_batch(FLAGS.batch_size)
-	feed_dict = {
-		images_pl: images_feed,
-		labels_pl: labels_feed,
-	}
-	return feed_dict
-
-
-def do_eval(sess, eval_correct, images_placeholder, labels_placeholder, data_set):
+def do_eval(sess, qty_correct_answers, feed_dict):
 	"""Runs one evaluation against the full epoch of data.
 
   Args:
     sess: The session in which the model has been trained.
-    eval_correct: The Tensor that returns the number of correct predictions.
-    images_placeholder: The images placeholder.
-    labels_placeholder: The labels placeholder.
-    data_set: The set of images and labels to evaluate, from
-      input_data.read_data_sets().
+    qty_correct_answers: The Tensor that returns the number of correct predictions.
+    feed_dict: Holding any of training, validation, or testing data.
 	"""
 	true_count = 0 # Counts the number of correct predictions.
-	steps_per_epoch = data_set.num_examples // FLAGS.batch_size
+	qty = six.next(six.itervalues(feed_dict)).shape[0]
+	steps_per_epoch = qty // FLAGS.batch_size
 	for step in xrange(steps_per_epoch):
-		feed_dict = fill_feed_dict(data_set, images_placeholder, labels_placeholder)
-		true_count += sess.run(eval_correct, feed_dict=feed_dict)
+		true_count += sess.run(qty_correct_answers, feed_dict=feed_dict)
 	
-	precision = true_count / dataset.num_examples
+	precision = true_count / qty
 	print('	Num examples: %d | Num correct: %d | Precision @ 1: %0.04f' %
-		  (num_examples, true_count, precision))
-	return precision
+		  (qty, true_count, precision))
 
 def run_training():
 	"""Train KDD for a number of steps."""
-	# (train_dataset, train_labels,\
-	#  valid_dataset, valid_labels,\
-	#  test_dataset, test_labels) = zxc251_reader.get_data()
-
 	with tf.Graph().as_default():
-		d = zxc251_reader.get_data()
-		ds = []
-		for i, t in enumerate(d):
-			if len(t.shape) > 1: # if not labels
-				t = t[:, :, :, np.newaxis]
-			ds.append(tf.convert_to_tensor(t))
+		ds = np2dataset(zxc251_reader.get_data()) # returns np arrays
 
 		global_step = tf.contrib.framework.get_or_create_global_step()
 
-		images_placeholder = tf.placeholder(tf.float32, shape=(batch_size, kdd.IMAGE_SIZE, kdd.IMAGE_SIZE, 1))
-		labels_placeholder = tf.placeholder(tf.int32, shape=(batch_size))
+		images_placeholder = tf.placeholder(
+			tf.float32, shape=(FLAGS.batch_size, kdd.IMAGE_SIZE, kdd.IMAGE_SIZE, 1))
+		labels_placeholder = tf.placeholder(
+			tf.int32, shape=(FLAGS.batch_size,))
+		def make_feed_dict(dataset):
+			nb = dataset.next_batch(FLAGS.batch_size)
+			return { images_placeholder: nb[0], labels_placeholder: nb[1] }
 
 		logits = kdd.inference(images_placeholder, FLAGS.conv1, FLAGS.stack1, FLAGS.conv2,
 							   FLAGS.stack2, FLAGS.fc1, FLAGS.fc2)
 		loss = kdd.loss(logits, labels_placeholder)
 		train_op = kdd.training(loss, global_step, FLAGS.batch_size)
-
-		init = tf.global_variables_initializer()
+		qty_correct_answers = kdd.evaluation(logits, labels_placeholder)
+		if tf.__version__ == "0.10.0rc0": # Jennings lab
+			init = tf.initialize_all_variables()
+		else: # at least as of v0.12.0
+			init = tf.global_variables_initializer()
 		saver = tf.train.Saver()
 		sess = tf.Session()
 		sess.run(init)
 		t_start = time.time()
 		for step in xrange(FLAGS.max_steps):
-			feed_dict = fill_feed_dict(train_dataset, images_placeholder, labels_placeholder)
+			feed_dict = make_feed_dict(ds.train)
 			_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
-			if step % 100: # status report
+			if step % 100 == 0: # status report
 				print("Step {}, loss = {}, time so far = {}"
 					  .format(step, loss_value, time.time() - t_start))
-				if (step + 1) % 1000 in {0, FLAG.max_steps}:
-					filename_checkpoint = os.path.join(FLAG.train_dir, "model.checkpoint")
-					saver.save(sess, filename_checkpoint, global_step=global_step)
-					
+			if (step + 1) % 1000 in {0, FLAGS.max_steps}:
+				filename_checkpoint = os.path.join(FLAGS.train_dir, "model.checkpoint")
+				saver.save(sess, filename_checkpoint, global_step=global_step)
+				do_eval(sess, qty_correct_answers, make_feed_dict(ds.train))
+				do_eval(sess, qty_correct_answers, make_feed_dict(ds.validation))
+				do_eval(sess, qty_correct_answers, make_feed_dict(ds.test))
 
 		# with tf.train.MonitoredTrainingSession( # Jennings lab only has TF v0.10rc0
 		# 		checkpoint_dir=FLAGS.train_dir,

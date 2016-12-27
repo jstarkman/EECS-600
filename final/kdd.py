@@ -101,6 +101,7 @@ def loss(logits, labels):
   Returns: Loss tensor of type float.
 	"""
 	labels = tf.to_int64(labels)
+	# http://stackoverflow.com/a/37317322
 	cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels, name='xentropy')
 	cross_entropy_mean = tf.reduce_mean(cross_entropy, name='xentropy_mean')
 	tf.add_to_collection("losses", cross_entropy_mean)
@@ -158,10 +159,7 @@ def evaluation(logits, labels):
     A scalar int32 tensor with the number of examples (out of batch_size)
     that were predicted correctly.
 	"""
-	# For a classifier model, we can use the in_top_k Op.
-	# It returns a bool tensor with shape [batch_size] that is true for
-	# the examples where the label is in the top k (here k=1)
-	# of all logits for that example.
 	correct = tf.nn.in_top_k(logits, labels, 1)
 	# Return the number of true entries.
 	return tf.reduce_sum(tf.cast(correct, tf.int32))
+

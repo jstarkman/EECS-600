@@ -51,18 +51,12 @@ def get_data():
 		shuffled_labels = labels[permutation]
 		return shuffled_dataset, shuffled_labels
 
-	# JAS
-	cuta = 0
-	cutb = 34
-	cutc = cuta # square
-	cutd = cutb
-
-	rdataset, rlabels = randomize(dataset, labels)
-	train_dataset = rdataset[0:num_train, cuta:cutb, cutc:cutd]
+	rdataset, rlabels = randomize(dataset[:, :, :, np.newaxis], labels)
+	train_dataset = rdataset[0:num_train, :, :, :]
 	train_labels = rlabels[0:num_train]
-	valid_dataset = rdataset[num_train:(num_train+num_valid), cuta:cutb, cutc:cutd]
+	valid_dataset = rdataset[num_train:(num_train+num_valid), :, :, :]
 	valid_labels = rlabels[num_train:(num_train+num_valid)]
-	test_dataset = rdataset[(num_train+num_valid):, cuta:cutb, cutc:cutd]
+	test_dataset = rdataset[(num_train+num_valid):, :, :, :]
 	test_labels = rlabels[(num_train+num_valid):]
 	# print('Training:', train_dataset.shape, train_labels.shape)
 	# print('Validation:', valid_dataset.shape, valid_labels.shape)
