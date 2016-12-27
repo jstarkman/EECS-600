@@ -1,7 +1,7 @@
 #! /usr/bin/python
 
-"""Trains and Evaluates the MNIST network using a feed dictionary."""
-# pylint: disable=missing-docstring
+"""Trains and Evaluates the KDD network using a feed dictionary."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -11,11 +11,12 @@ import time
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
+import numpy as np
 
 # from tensorflow.examples.tutorials.mnist import input_data
 # from tensorflow.examples.tutorials.mnist import mnist
 import zxc251_reader
-import mnist # local version (modified)
+import kdd
 from np2dataset import np2dataset
 
 # Basic model parameters as external flags.
@@ -23,36 +24,20 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
-flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
-flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
-flags.DEFINE_integer('batch_size', 100, 'Batch size.  '
-                     'Must divide evenly into the dataset sizes.')
+
+# kdd.inference(images, c1, stack_height_c1, c2, stack_height_c2, fc1, fc2):
+flags.DEFINE_integer('conv1',    5, 'Side length of kernel of conv1.')
+flags.DEFINE_integer('stack1',  64, 'Number of feature maps for conv1.')
+flags.DEFINE_integer('conv2',    5, 'Side length of kernel of conv2.')
+flags.DEFINE_integer('stack2', 128, 'Number of feature maps for conv2.')
+flags.DEFINE_integer('fc1',    192, 'Number of units in fully-connected layer 1.')
+flags.DEFINE_integer('fc2',     96, 'Number of units in fully-connected layer 2.')
+
+flags.DEFINE_integer('batch_size', 243, 'Batch size.  Must divide evenly into the dataset sizes.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
 
-def placeholder_inputs(batch_size):
-  """Generate placeholder variables to represent the input tensors.
-
-  These placeholders are used as inputs by the rest of the model building
-  code and will be fed from the downloaded data in the .run() loop, below.
-
-  Args:
-    batch_size: The batch size will be baked into both placeholders.
-
-  Returns:
-    images_placeholder: Images placeholder.
-    labels_placeholder: Labels placeholder.
-  """
-  # Note that the shapes of the placeholders match the shapes of the full
-  # image and label tensors, except the first dimension is now batch_size
-  # rather than the full size of the train or test data sets.
-  images_placeholder = tf.placeholder(tf.float32, shape=(batch_size,
-                                                         mnist.IMAGE_PIXELS))
-  labels_placeholder = tf.placeholder(tf.int32, shape=(batch_size))
-  return images_placeholder, labels_placeholder
-
-
 def fill_feed_dict(data_set, images_pl, labels_pl):
-  """Fills the feed_dict for training the given step.
+	"""Fills the feed_dict for training the given step.
 
   A feed_dict takes the form of:
   feed_dict = {
@@ -67,23 +52,17 @@ def fill_feed_dict(data_set, images_pl, labels_pl):
 
   Returns:
     feed_dict: The feed dictionary mapping from placeholders to values.
-  """
-  # Create the feed_dict for the placeholders filled with the next
-  # `batch size` examples.
-  images_feed, labels_feed = data_set.next_batch(FLAGS.batch_size)
-  feed_dict = {
-      images_pl: images_feed,
-      labels_pl: labels_feed,
-  }
-  return feed_dict
+	"""
+	images_feed, labels_feed = data_set.next_batch(FLAGS.batch_size)
+	feed_dict = {
+		images_pl: images_feed,
+		labels_pl: labels_feed,
+	}
+	return feed_dict
 
 
-def do_eval(sess,
-            eval_correct,
-            images_placeholder,
-            labels_placeholder,
-            data_set):
-  """Runs one evaluation against the full epoch of data.
+def do_eval(sess, eval_correct, images_placeholder, labels_placeholder, data_set):
+	"""Runs one evaluation against the full epoch of data.
 
   Args:
     sess: The session in which the model has been trained.
@@ -92,130 +71,67 @@ def do_eval(sess,
     labels_placeholder: The labels placeholder.
     data_set: The set of images and labels to evaluate, from
       input_data.read_data_sets().
-  """
-  # And run one epoch of eval.
-  true_count = 0  # Counts the number of correct predictions.
-  steps_per_epoch = data_set.num_examples // FLAGS.batch_size
-  num_examples = steps_per_epoch * FLAGS.batch_size
-  for step in xrange(steps_per_epoch):
-    feed_dict = fill_feed_dict(data_set,
-                               images_placeholder,
-                               labels_placeholder)
-    true_count += sess.run(eval_correct, feed_dict=feed_dict)
-  precision = true_count / num_examples
-  print('  Num examples: %d  Num correct: %d  Precision @ 1: %0.04f' %
-        (num_examples, true_count, precision))
-  return precision
+	"""
+	true_count = 0 # Counts the number of correct predictions.
+	steps_per_epoch = data_set.num_examples // FLAGS.batch_size
+	for step in xrange(steps_per_epoch):
+		feed_dict = fill_feed_dict(data_set, images_placeholder, labels_placeholder)
+		true_count += sess.run(eval_correct, feed_dict=feed_dict)
+	
+	precision = true_count / dataset.num_examples
+	print('	Num examples: %d | Num correct: %d | Precision @ 1: %0.04f' %
+		  (num_examples, true_count, precision))
+	return precision
 
 def run_training():
-  """Train MNIST for a number of steps."""
-  # Get the sets of images and labels for training, validation, and
-  # test on MNIST.
-  # data_sets = input_data.read_data_sets(FLAGS.train_dir, FLAGS.fake_data)
-  data_sets = np2dataset(zxc251_reader.get_data())
+	"""Train KDD for a number of steps."""
+	# (train_dataset, train_labels,\
+	#  valid_dataset, valid_labels,\
+	#  test_dataset, test_labels) = zxc251_reader.get_data()
 
-  # Tell TensorFlow that the model will be built into the default Graph.
-  with tf.Graph().as_default():
-    # Generate placeholders for the images and labels.
-    images_placeholder, labels_placeholder = placeholder_inputs(
-        FLAGS.batch_size)
+	with tf.Graph().as_default():
+		d = zxc251_reader.get_data()
+		ds = []
+		for i, t in enumerate(d):
+			if len(t.shape) > 1: # if not labels
+				t = t[:, :, :, np.newaxis]
+			ds.append(tf.convert_to_tensor(t))
 
-    # Build a Graph that computes predictions from the inference model.
-    logits = mnist.inference(images_placeholder,
-                             FLAGS.hidden1,
-                             FLAGS.hidden2)
+		global_step = tf.contrib.framework.get_or_create_global_step()
 
-    # Add to the Graph the Ops for loss calculation.
-    loss = mnist.loss(logits, labels_placeholder)
+		images_placeholder = tf.placeholder(tf.float32, shape=(batch_size, kdd.IMAGE_SIZE, kdd.IMAGE_SIZE, 1))
+		labels_placeholder = tf.placeholder(tf.int32, shape=(batch_size))
 
-    # Add to the Graph the Ops that calculate and apply gradients.
-    train_op = mnist.training(loss, FLAGS.learning_rate)
+		logits = kdd.inference(images_placeholder, FLAGS.conv1, FLAGS.stack1, FLAGS.conv2,
+							   FLAGS.stack2, FLAGS.fc1, FLAGS.fc2)
+		loss = kdd.loss(logits, labels_placeholder)
+		train_op = kdd.training(loss, global_step, FLAGS.batch_size)
 
-    # Add the Op to compare the logits to the labels during evaluation.
-    eval_correct = mnist.evaluation(logits, labels_placeholder)
+		init = tf.global_variables_initializer()
+		saver = tf.train.Saver()
+		sess = tf.Session()
+		sess.run(init)
+		t_start = time.time()
+		for step in xrange(FLAGS.max_steps):
+			feed_dict = fill_feed_dict(train_dataset, images_placeholder, labels_placeholder)
+			_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
+			if step % 100: # status report
+				print("Step {}, loss = {}, time so far = {}"
+					  .format(step, loss_value, time.time() - t_start))
+				if (step + 1) % 1000 in {0, FLAG.max_steps}:
+					filename_checkpoint = os.path.join(FLAG.train_dir, "model.checkpoint")
+					saver.save(sess, filename_checkpoint, global_step=global_step)
+					
 
-    # Build the summary operation based on the TF collection of Summaries.
-    summary_op = tf.merge_all_summaries()
+		# with tf.train.MonitoredTrainingSession( # Jennings lab only has TF v0.10rc0
+		# 		checkpoint_dir=FLAGS.train_dir,
+		# 		hooks=[tf.train.StopAtStepHook(last_step=FLAGS.max_steps),
+		# 			   tf.train.NanTensorHook(loss) ]) as mon_sess:
+		# 	while not mon_sess.should_stop():
+		# 		mon_sess.run(train_op)
 
-    # Add the variable initializer Op.
-    init = tf.initialize_all_variables()
-
-    # Create a saver for writing training checkpoints.
-    saver = tf.train.Saver()
-
-    # Create a session for running Ops on the Graph.
-    sess = tf.Session()
-
-    # Instantiate a SummaryWriter to output summaries and the Graph.
-    summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, sess.graph)
-
-    # And then after everything is built:
-
-    # Run the Op to initialize the variables.
-    sess.run(init)
-
-    last_precision = 0
-
-    # Start the training loop.
-    for step in xrange(FLAGS.max_steps):
-      start_time = time.time()
-
-      # Fill a feed dictionary with the actual set of images and labels
-      # for this particular training step.
-      feed_dict = fill_feed_dict(data_sets.train,
-                                 images_placeholder,
-                                 labels_placeholder)
-
-      # Run one step of the model.  The return values are the activations
-      # from the `train_op` (which is discarded) and the `loss` Op.  To
-      # inspect the values of your Ops or variables, you may include them
-      # in the list passed to sess.run() and the value tensors will be
-      # returned in the tuple from the call.
-      _, loss_value = sess.run([train_op, loss],
-                               feed_dict=feed_dict)
-
-      duration = time.time() - start_time
-
-      # Write the summaries and print an overview fairly often.
-      if step % 100 == 0:
-        # Print status to stdout.
-        print('Step %d: loss = %.2f (%.3f sec)' % (step, loss_value, duration))
-        # Update the events file.
-        summary_str = sess.run(summary_op, feed_dict=feed_dict)
-        summary_writer.add_summary(summary_str, step)
-        summary_writer.flush()
-
-      # Save a checkpoint and evaluate the model periodically.
-      if (step + 1) % 1000 == 0 or (step + 1) == FLAGS.max_steps:
-        checkpoint_file = os.path.join(FLAGS.train_dir, 'checkpoint')
-        saver.save(sess, checkpoint_file, global_step=step)
-        # Evaluate against the training set.
-        print('Training Data Eval:')
-        do_eval(sess,
-                eval_correct,
-                images_placeholder,
-                labels_placeholder,
-                data_sets.train)
-        # Evaluate against the validation set.
-        print('Validation Data Eval:')
-        do_eval(sess,
-                eval_correct,
-                images_placeholder,
-                labels_placeholder,
-                data_sets.validation)
-        # Evaluate against the test set.
-        print('Test Data Eval:')
-        p = do_eval(sess,
-                eval_correct,
-                images_placeholder,
-                labels_placeholder,
-                data_sets.test)
-        last_precision = p
-  return last_precision
-
-def main(_):
-  return run_training()
-
+def main(argv=None):
+	run_training()
 
 if __name__ == '__main__':
-  tf.app.run()
+	tf.app.run()

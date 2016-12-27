@@ -29,11 +29,11 @@ class DS:
 		# makes reshaping data into vectors relatively painless
 		assert(self.which_axis == 0)
 		self.num_examples = d.shape[self.which_axis]
-		v = 1;
-		for i, s in enumerate(d.shape):
-			if i != self.which_axis:
-				v *= s
-		self.data   = d.reshape((self.num_examples, v))
+		# v = 1;
+		# for i, s in enumerate(d.shape):
+		# 	if i != self.which_axis:
+		# 		v *= s
+		self.data = d # d.reshape((self.num_examples, v))
 		self.labels = l
 		self.idx = 0
 		self.epochs_completed = 0
