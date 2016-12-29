@@ -86,7 +86,7 @@ def run_training():
 		for step in xrange(FLAGS.max_steps):
 			feed_dict = make_feed_dict(ds.train)
 			_, loss_value = sess.run([train_op, loss], feed_dict=feed_dict)
-			if step % 100 == 0: # status report
+			if step % 100 in {0, FLAGS.max_steps}: # status report
 				print("Step {}, loss = {}, time so far = {}"
 					  .format(step, loss_value, time.time() - t_start))
 			if (step + 1) % 1000 in {0, FLAGS.max_steps}:

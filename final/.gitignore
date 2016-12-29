@@ -2,6 +2,7 @@
 *.pickle*
 data/*
 png.py
+log*
 
 ########## Everything below this point came from Github's
 ########## Python.gitignore file

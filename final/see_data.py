@@ -23,10 +23,11 @@ print('Validation:', valid_dataset.shape, valid_labels.shape)
 print('Testing:', test_dataset.shape, test_labels.shape)
 
 first = train_dataset[0, :, :]
+first_name = zxc251_reader.label2english(train_labels[0])
 px = depth2pixels(first)
 print px
 
 # import pdb; pdb.set_trace() # set breakpoint
 
-png.from_array(px, 'L;8').save("first.png")
+png.from_array(px, 'L;8').save("first_{}.png".format(first_name))
 

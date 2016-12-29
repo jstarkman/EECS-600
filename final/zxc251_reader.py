@@ -2,6 +2,27 @@
 import numpy as np
 from six.moves import cPickle as pickle
 
+
+name2value = {'v8':0, 'duck':1, 'stapler':2, 'pball':3, 'tball':4, 'sponge':5,
+			  'bclip':6, 'tape':7, 'gstick':8, 'cup':9, 'pen':10, 'calc':11,
+			  'blade':12, 'bottle':13, 'cpin':14, 'scissors':15, 'stape':16,
+			  'gball':17, 'orwidg':18, 'glue':19, 'spoon':20, 'fork':21,
+			  'nerf':22, 'eraser':23, 'empty':24}
+
+name2string = {'v8':'v8 can', 'duck':'ducky', 'stapler':'stapler',
+			   'pball':'ping pong ball', 'tball':'tennis ball', 'sponge':'sponge',
+			   'bclip':'binder clip', 'tape':'big tape', 'gstick':'glue stick',
+			   'cup':'cup', 'pen':'pen', 'calc':'calculator', 'blade':'razor',
+			   'bottle':'bottle', 'cpin':'clothespin', 'scissors':'scissors',
+			   'stape':'small tape', 'gball':'golf ball', 'orwidg':'orange thing',
+			   'glue':'glue', 'spoon':'spoon', 'fork':'fork',
+			   'nerf':'nerf gun', 'eraser':'eraser', 'empty':'empty plate'}
+
+value2name = dict((value, name) for name, value in name2value.items())
+
+def label2english(l):
+	return name2string[value2name[l]]
+
 def get_data():
 	file_name = 'depth_data.pickle2'
 	with open(file_name, 'rb') as f:
@@ -21,23 +42,6 @@ def get_data():
 	num_train = int(round(num_images*0.85))
 	num_valid = int(round(num_images*0.08))
 	num_test = int(round(num_images*0.1))
-
-	name2value = {'v8':0, 'duck':1, 'stapler':2, 'pball':3, 'tball':4, 'sponge':5,
-	              'bclip':6, 'tape':7, 'gstick':8, 'cup':9, 'pen':10, 'calc':11,
-	              'blade':12, 'bottle':13, 'cpin':14, 'scissors':15, 'stape':16,
-	              'gball':17, 'orwidg':18, 'glue':19, 'spoon':20, 'fork':21,
-	              'nerf':22, 'eraser':23, 'empty':24}
-
-	name2string = {'v8':'v8 can', 'duck':'ducky', 'stapler':'stapler',
-	               'pball':'ping pong ball', 'tball':'tennis ball', 'sponge':'sponge',
-	               'bclip':'binder clip', 'tape':'big tape', 'gstick':'glue stick',
-	               'cup':'cup', 'pen':'pen', 'calc':'calculator', 'blade':'razor',
-	               'bottle':'bottle', 'cpin':'clothespin', 'scissors':'scissors',
-	               'stape':'small tape', 'gball':'golf ball', 'orwidg':'orange thing',
-	               'glue':'glue', 'spoon':'spoon', 'fork':'fork',
-	               'nerf':'nerf gun', 'eraser':'eraser', 'empty':'empty plate'}
-
-	value2name = dict((value, name) for name, value in name2value.items())
 
 	labels = np.ndarray(num_images, dtype=np.int32)
 	index = 0
@@ -62,6 +66,6 @@ def get_data():
 	# print('Validation:', valid_dataset.shape, valid_labels.shape)
 	# print('Testing:', test_dataset.shape, test_labels.shape)
 	return (train_dataset, train_labels,\
-				valid_dataset, valid_labels,\
-				test_dataset, test_labels\
-				)
+			valid_dataset, valid_labels,\
+			test_dataset, test_labels\
+	)
