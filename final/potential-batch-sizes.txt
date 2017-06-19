@@ -1,0 +1,7 @@
+Train: 41310 = 2 x 3^5 x 5 x 17
+Valid: 3888 = 2^4 x 3^5
+Tests: 3402 = 2 x 3^5 x 7
+
+Potential batch sizes must be the product of a subset of the prime
+factors of the total number of training samples.
+
